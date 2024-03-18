@@ -1,11 +1,5 @@
 use crate::{MemoryAddresses, MemoryValues};
-use asr::{
-    itoa, ryu,
-    signature::Signature,
-    string::{ArrayCString, ArrayString},
-    watcher::Pair,
-    Address, Process,
-};
+use asr::{itoa, ryu, signature::Signature, string::ArrayCString, watcher::Pair, Address, Process};
 use itoa::Integer;
 
 // the array with all the room names
@@ -59,7 +53,7 @@ fn update_pair_cstring(
 
 pub fn room_id_sigscan_start(
     process: &asr::Process,
-    addresses: MemoryAddresses,
+    addresses: &MemoryAddresses,
 ) -> Result<asr::Address, ()> {
     let main_address = addresses.main_address.unwrap_or(Address::new(0));
 
@@ -195,7 +189,7 @@ pub fn refresh_mem_values<'a>(
         0x90: level minute (f64)
         0x98: level seconds (f64)
         0xA0: current room (string)
-        0xE0: end of level fade exists (bool / u8)
+        0xE0: end of level fade exists (u8 (bool))
         0xE1: boss HP (u8)
         */
 

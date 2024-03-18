@@ -1,4 +1,3 @@
-use asr::print_message;
 use asr::settings::gui::Title;
 use asr::settings::Gui;
 use asr::watcher::Pair;

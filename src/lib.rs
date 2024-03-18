@@ -1,9 +1,13 @@
 #![no_std]
 
-use asr::print_message;
 use asr::string::ArrayCString;
+use asr::time::Duration;
+use asr::timer::TimerState;
 use asr::{future::next_tick, settings::Gui, watcher::Pair, Process};
+use asr::{print_message, timer};
 use memory::{refresh_mem_values, ROOM_NAME_SIZE_CAP};
+use room_names::Level;
+use settings::TimerMode;
 
 mod memory;
 mod room_names;
@@ -14,7 +18,7 @@ asr::panic_handler!();
 
 const MAIN_MODULE: &str = "PizzaTower.exe";
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 struct MemoryAddresses {
     main_address: Option<asr::Address>,
     room_id: Option<asr::Address>,
@@ -67,7 +71,7 @@ async fn main() {
             .until_closes(async {
 
                 // init
-                if let Ok(address) = memory::room_id_sigscan_start(&process, mem_addresses.clone()) {
+                if let Ok(address) = memory::room_id_sigscan_start(&process, &mem_addresses) {
                     mem_addresses.room_id = Some(address);
                 } else {
                     mem_addresses.room_id = None;
@@ -136,7 +140,131 @@ async fn main() {
                             break;
                         }
 
-                        // TODO: Do something on every tick.
+                        let room_name_parsed_current = mem_values.room_name.current.validate_utf8().unwrap_or("(invalid utf8 string)");
+                        let room_name_parsed_old = mem_values.room_name.old.validate_utf8().unwrap_or("(invalid utf8 string)");
+
+                        // update current level and enable full game splits
+                        if mem_values.room_name.changed() {
+                            current_level = room_names::get_current_level(room_name_parsed_current, current_level);
+                            if !enable_full_game_split {
+                                enable_full_game_split = room_names::full_game_split_unlock_rooms(room_name_parsed_current);
+                            }
+
+                        }
+                        // TODO: function that return full level name using the enum
+                        //timer::set_variable("Current Level", current_level));
+
+                        // game time set
+                        if mem_addresses.buffer_helper.is_some() {
+
+                            igt_file_secs_calculated.old = igt_file_secs_calculated.current;
+                            igt_file_secs_calculated.current = mem_values.file_minutes.current * 60.0 + mem_values.file_seconds.current;
+                            igt_level_secs_calculated.old =  igt_level_secs_calculated.current;
+                            igt_level_secs_calculated.current = mem_values.level_minutes.current * 60.0 + mem_values.level_seconds.current;
+
+                            // offsets for ng+ and iw
+                            if timer::state() == TimerState::NotRunning {
+                                // ng+ offset update
+                                if ng_plus_offset_seconds.is_none() && room_name_parsed_current == "tower_entrancehall" && mem_values.level_minutes.current == 0.0 && mem_values.level_seconds.current < 1.0 {
+                                    ng_plus_offset_seconds = Some(igt_file_secs_calculated.current);
+                                }
+                                if ng_plus_offset_seconds.is_some() && (room_name_parsed_current == "hub_loadingscreen" || room_name_parsed_current == "Finalintro") {
+                                    ng_plus_offset_seconds = None;
+                                }
+
+                                // iw offset update
+                                if iw_offset_seconds.is_none() && current_level == room_names::Level::Hub {
+                                    iw_offset_seconds = Some(igt_file_secs_calculated.current);
+                                }
+                                if iw_offset_seconds.is_some() && current_level != room_names::Level::Hub {
+                                    iw_offset_seconds = None;
+                                }
+                            }
+
+                            // makes the livesplit game time frozen, if not used it stutters when the igt stops advancing
+                            timer::pause_game_time();
+
+                            let game_time_livesplit = match settings.timer_mode.current {
+                                TimerMode::FullGame => igt_file_secs_calculated.current,
+                                TimerMode::IL => igt_level_secs_calculated.current,
+                                TimerMode::NewGamePlus => igt_file_secs_calculated.current - ng_plus_offset_seconds.unwrap_or(0.0),
+                                TimerMode::IW => igt_level_secs_calculated.current - iw_offset_seconds.unwrap_or(0.0),
+                            };
+                            timer::set_game_time(Duration::seconds_f64(game_time_livesplit));
+                        }
+
+                        // start
+                        if settings.start_enable {
+                            if settings.start_new_file && room_name_parsed_current == "tower_entrancehall" && room_name_parsed_old == "Finalintro" {
+                                timer::start();
+                            }
+                            if settings.start_any_file && room_name_parsed_current == "tower_entrancehall" && room_name_parsed_old == "hub_loadingscreen" {
+                                timer::start();
+                            }
+                            if settings.start_new_il && room_names::get_starting_room(&current_level) == room_name_parsed_current && igt_level_secs_calculated.current > 0.07 && igt_level_secs_calculated.current <= 0.1 {
+                                timer::start();
+                            }
+                            if settings.start_exit_level && mem_values.room_name.changed() && room_names::full_game_split_rooms(room_name_parsed_old) && current_level == Level::Hub {
+                                timer::start();
+                            }
+                        }
+
+                        // reset
+                        if settings.reset_enable {
+                            if settings.reset_new_file && room_name_parsed_current == "Finalintro" && room_name_parsed_old != "Finalintro" {
+                                timer::reset();
+                            }
+                            if settings.reset_any_file && mem_values.room_name.changed() && room_name_parsed_current == "hub_loadingscreen" {
+                                timer::reset();
+                            }
+                            if settings.reset_new_level && igt_level_secs_calculated.decreased() && current_level != Level::Hub {
+                                timer::reset();
+                            }
+                        }
+
+                        // split
+                        if settings.splits_enable {
+
+                            // covers any full game split
+                            if settings.splits_level_end {
+
+                                // standard level / boss end
+                                // got lazy and hardcoded the noise pizzaface split here :)
+                                if mem_values.room_name.changed()
+                                && room_names::full_game_split_rooms(room_name_parsed_old)
+                                && (current_level == Level::Hub || current_level == Level::ResultsScreen)
+                                && enable_full_game_split
+                                && (mem_values.boss_hp.old == 0 || (room_name_parsed_current == "boss_pizzafacehub" && room_name_parsed_old == "boss_pizzaface")) {
+                                    timer::split();
+                                    enable_full_game_split = false;
+                                }
+
+                                // end of the run frame perfect split, technically the prev "if" could cover this too but frame perfectly splitting at the end is cooler
+                                if mem_values.end_of_level.current == 1 && mem_values.end_of_level.old == 0 && room_name_parsed_current == "tower_entrancehall" {
+                                    timer::split();
+                                }
+
+                                // ctop entering from oob
+                                if timer::state() == TimerState::NotRunning && ctop_oob_split {
+                                    ctop_oob_split = false;
+                                }
+                                if room_name_parsed_current == "tower_finalhallway" && room_name_parsed_old == "tower_5" && !ctop_oob_split {
+                                    ctop_oob_split = true;
+                                    timer::split();
+                                }
+                            }
+
+                            if settings.splits_rooms
+                            && (igt_level_secs_calculated.current - last_room_split_time > 2.0 || mem_values.room_name.current != last_room_split_name)
+                            && (mem_values.room_name.changed() || mem_values.end_of_level.current == 1 && mem_values.end_of_level.old == 1) {
+                                last_room_split_time = igt_level_secs_calculated.current;
+                                last_room_split_name = mem_values.room_name.old;
+
+                                asr::timer::split();
+                            }
+
+                        }
+
                         next_tick().await;
                     }
                 }
