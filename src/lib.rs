@@ -17,6 +17,8 @@ asr::async_main!(stable);
 asr::panic_handler!();
 
 const MAIN_MODULE: &str = "PizzaTower.exe";
+const TICK_RATE_MAIN_LOOP: f64 = 240.0;
+const TICK_RATE_RETRY_ATTACH: f64 = 1.0;
 
 #[derive(Default)]
 struct MemoryAddresses {
@@ -41,9 +43,13 @@ struct MemoryValues {
 
 async fn main() {
     let mut settings = settings::Settings::register();
+    if settings.timer_mode_load_defaults {
+        settings.load_default_settings_for_mode();
+    }
     let mut mem_addresses = MemoryAddresses::default();
     let mut mem_values = MemoryValues::default();
-    asr::set_tick_rate(240.0);
+
+    asr::set_tick_rate(TICK_RATE_MAIN_LOOP);
 
     loop {
         // check if settings GUI changes
@@ -58,7 +64,10 @@ async fn main() {
         match process_option {
             Some(process_found) => {
                 process = process_found;
-                mem_addresses.main_address = Some(process.get_module_address(MAIN_MODULE).unwrap());
+                mem_addresses.main_address = match process.get_module_address(MAIN_MODULE) {
+                    Ok(address) => Some(address),
+                    Err(_) => None,
+                };
                 print_message("Connected to Pizza Tower the pizzapasta game!!!");
             }
             None => {
@@ -69,6 +78,8 @@ async fn main() {
 
         process
             .until_closes(async {
+
+                asr::set_tick_rate(TICK_RATE_RETRY_ATTACH);
 
                 // init
                 if let Ok(address) = memory::room_id_sigscan_start(&process, &mem_addresses) {
@@ -92,12 +103,12 @@ async fn main() {
                             if let Ok(value) = process.read::<i32>(mem_addresses.main_address.unwrap_or(asr::Address::default()).value() + mem_addresses.room_id.unwrap().value()) {
                                 mem_values.room_id.current = value;
                             } else {
+                                asr::set_tick_rate(TICK_RATE_MAIN_LOOP);
                                 break;
                             }
                         }
                     }
                 }
-
                 mem_addresses.buffer_helper = match memory::buffer_helper_sigscan_init(&process) {
                     Ok(address) => Some(address),
                     Err(_) => None,
@@ -113,6 +124,8 @@ async fn main() {
 
                 // ready for main loop
                 if mem_addresses.room_names.is_some() || mem_addresses.buffer_helper.is_some() {
+
+                    asr::set_tick_rate(TICK_RATE_MAIN_LOOP);
 
                     // variables declaration for the main loop
                     let mut current_level = room_names::Level::Unknown;
@@ -267,6 +280,9 @@ async fn main() {
 
                         next_tick().await;
                     }
+                } else {
+                    next_tick().await;
+                    asr::set_tick_rate(TICK_RATE_MAIN_LOOP);
                 }
             })
             .await;

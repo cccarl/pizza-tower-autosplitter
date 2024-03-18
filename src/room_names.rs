@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq)]
 pub enum Level {
     Hub,
     F1Tutorial,
