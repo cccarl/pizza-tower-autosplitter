@@ -1,10 +1,12 @@
 #![no_std]
 
-use asr::arrayvec::ArrayString;
 use asr::print_message;
+use asr::string::ArrayCString;
 use asr::{future::next_tick, settings::Gui, watcher::Pair, Process};
+use memory::{refresh_mem_values, ROOM_NAME_SIZE_CAP};
 
 mod memory;
+mod room_names;
 mod settings;
 
 asr::async_main!(stable);
@@ -22,14 +24,14 @@ struct MemoryAddresses {
 
 #[derive(Default)]
 struct MemoryValues {
-    game_version: Pair<ArrayString<0x40>>,
+    game_version: Pair<ArrayCString<0x40>>,
     room_id: Pair<i32>,
-    room_name: Pair<ArrayString<0x40>>,
+    room_name: Pair<ArrayCString<ROOM_NAME_SIZE_CAP>>,
     file_seconds: Pair<f64>,
     file_minutes: Pair<f64>,
     level_seconds: Pair<f64>,
     level_minutes: Pair<f64>,
-    end_of_level: Pair<bool>,
+    end_of_level: Pair<u8>,
     boss_hp: Pair<u8>,
 }
 
@@ -37,6 +39,7 @@ async fn main() {
     let mut settings = settings::Settings::register();
     let mut mem_addresses = MemoryAddresses::default();
     let mut mem_values = MemoryValues::default();
+    asr::set_tick_rate(240.0);
 
     loop {
         // check if settings GUI changes
@@ -103,12 +106,39 @@ async fn main() {
                     Err(_) => None,
                     };
                 }
-                // TODO: Load some initial information from the process.
-                loop {
-                    settings.update();
 
-                    // TODO: Do something on every tick.
-                    next_tick().await;
+                // ready for main loop
+                if mem_addresses.room_names.is_some() || mem_addresses.buffer_helper.is_some() {
+
+                    // variables declaration for the main loop
+                    let mut current_level = room_names::Level::Unknown;
+                    let mut igt_file_secs_calculated: Pair<f64> = Pair::default();
+                    let mut igt_level_secs_calculated: Pair<f64> = Pair::default();
+
+                    let mut ng_plus_offset_seconds: Option<f64> = None;
+                    let mut iw_offset_seconds: Option<f64> = None;
+
+                    let mut enable_full_game_split = false;
+                    let mut ctop_oob_split = false; // should only happen once per run
+
+                    let mut last_room_split_name = ArrayCString::<ROOM_NAME_SIZE_CAP>::new();
+                    let mut last_room_split_time = 0.0;
+
+                    loop {
+                        settings.update();
+                        if settings.timer_mode.changed() {
+                            settings.load_default_settings_for_mode();
+                        }
+
+                        if let Err(text) = refresh_mem_values(&process, &mem_addresses, &mut mem_values) {
+                            print_message(text);
+                            print_message("Exiting main loop and retrying...");
+                            break;
+                        }
+
+                        // TODO: Do something on every tick.
+                        next_tick().await;
+                    }
                 }
             })
             .await;
