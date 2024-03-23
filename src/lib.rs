@@ -231,6 +231,7 @@ async fn main() {
                                 timer::reset();
                             }
                             if settings.reset_new_level && igt_level_secs_calculated.decreased() && current_level != Level::Hub {
+                                last_room_split_time = 0.0;
                                 timer::reset();
                             }
                         }

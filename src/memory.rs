@@ -193,54 +193,27 @@ pub fn refresh_mem_values<'a>(
         0xE1: boss HP (u8)
         */
 
+        let buffer_helper_add = memory_addresses
+            .buffer_helper
+            .unwrap_or(Address::new(0))
+            .value();
+
         // game version doesn't need to be updated more tha once...
         if memory_values.game_version.current == ArrayCString::default() {
-            let game_version = memory_addresses
-                .buffer_helper
-                .unwrap_or(Address::new(0))
-                .value()
-                + 0x40;
+            let game_version = buffer_helper_add + 0x40;
 
             if let Ok(value) = process.read::<ArrayCString<ROOM_NAME_SIZE_CAP>>(game_version) {
                 update_pair_cstring("Game Version", value, &mut memory_values.game_version);
             }
         }
 
-        let file_minutes_add = memory_addresses
-            .buffer_helper
-            .unwrap_or(Address::new(0))
-            .value()
-            + 0x80;
-        let file_seconds_add = memory_addresses
-            .buffer_helper
-            .unwrap_or(Address::new(0))
-            .value()
-            + 0x88;
-        let level_minutes_add = memory_addresses
-            .buffer_helper
-            .unwrap_or(Address::new(0))
-            .value()
-            + 0x90;
-        let level_seconds_add = memory_addresses
-            .buffer_helper
-            .unwrap_or(Address::new(0))
-            .value()
-            + 0x98;
-        let room_add = memory_addresses
-            .buffer_helper
-            .unwrap_or(Address::new(0))
-            .value()
-            + 0xA0;
-        let end_level_fade_add = memory_addresses
-            .buffer_helper
-            .unwrap_or(Address::new(0))
-            .value()
-            + 0xE0;
-        let boss_hp_add = memory_addresses
-            .buffer_helper
-            .unwrap_or(Address::new(0))
-            .value()
-            + 0xE1;
+        let file_minutes_add = buffer_helper_add + 0x80;
+        let file_seconds_add = buffer_helper_add + 0x88;
+        let level_minutes_add = buffer_helper_add + 0x90;
+        let level_seconds_add = buffer_helper_add + 0x98;
+        let room_add = buffer_helper_add + 0xA0;
+        let end_level_fade_add = buffer_helper_add + 0xE0;
+        let boss_hp_add = buffer_helper_add + 0xE1;
 
         if let Ok(value) = process.read::<f64>(Address::new(file_seconds_add)) {
             update_pair_f64("File Seconds", value, &mut memory_values.file_seconds);
