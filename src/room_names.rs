@@ -196,3 +196,40 @@ pub fn full_game_split_rooms(exited_level: &str) -> bool {
     ]
     .contains(&exited_level)
 }
+
+pub fn get_full_level_name<'a>(level: &Level) -> &'a str {
+    match level {
+        Level::Hub => "Hub",
+        Level::F1Tutorial => "Tutorial",
+        Level::F1TutorialNoise => "Tutorial (Noise)",
+        Level::F1JohnGutter => "John Gutter",
+        Level::F1Pizzascape => "Pizzascape",
+        Level::F1AncientCheese => "Ancient Cheese",
+        Level::F1BloodsauceDungeon => "Bloodsauce Dungeon",
+        Level::F2OreganoDesert => "Oregano Desert",
+        Level::F2Wasteyard => "Wasteyard",
+        Level::F2FunFarm => "Fun Farm",
+        Level::F2FastfoodSaloon => "Fastfood Saloon",
+        Level::F3CrustCove => "Crust Cove",
+        Level::F3GnomeForest => "Gnome Forest",
+        Level::F3Golf => "GOLF",
+        Level::F3DeepDish9 => "Deep-Dish 9",
+        Level::F4ThePigCity => "The Pig City",
+        Level::F4OhShit => "Oh Shit!",
+        Level::F4PeppibotFactory => "Peppibot Factory",
+        Level::F4Refrigerator => "Refrigerator-Refrigerador-Freezerator",
+        Level::F5Pizzascare => "Pizzascare",
+        Level::F5DMAS => "Don't Make a Sound",
+        Level::F5War => "WAR",
+        Level::F5CrumblingTower => "The Crumbling Tower of Pizza",
+        Level::SecretsOfTheWorld => "Secrets of the World",
+        Level::TrickyTreat => "Tricky Treat",
+        Level::Pepperman => "Pepperman",
+        Level::Vigilante => "The Vigilante",
+        Level::Noise => "The Noise/The Doise",
+        Level::Fake => "Fake Peppino",
+        Level::PizzaFace => "Pizzaface",
+        Level::ResultsScreen => "You did it! Pizza Tower",
+        Level::Unknown => "idk",
+    }
+}

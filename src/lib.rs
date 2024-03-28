@@ -164,8 +164,8 @@ async fn main() {
                             }
 
                         }
-                        // TODO: function that return full level name using the enum
-                        //timer::set_variable("Current Level", current_level));
+
+                        timer::set_variable("Current Level", room_names::get_full_level_name(&current_level));
 
                         // game time set
                         if mem_addresses.buffer_helper.is_some() {
