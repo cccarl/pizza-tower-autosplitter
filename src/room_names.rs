@@ -154,6 +154,7 @@ pub fn full_game_split_unlock_rooms(current_room: &str) -> bool {
         "boss_noise",
         "boss_fakepepkey",
         "boss_pizzaface",
+        "tower_finalhallway",
     ]
     .contains(&current_room)
 }
@@ -190,6 +191,7 @@ pub fn full_game_split_rooms(exited_level: &str) -> bool {
         "boss_fakepepkey",
         "boss_pizzaface",
         "boss_pizzafacefinale",
+        "tower_entrancehall",
         "rank_room",
     ]
     .contains(&exited_level)
