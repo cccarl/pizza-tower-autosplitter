@@ -61,7 +61,7 @@ pub fn room_id_sigscan_start(
     asr::print_message("Starting the room id signature scan...");
     let mut room_id_address: Option<Address> = None;
     for range in process.memory_ranges().rev() {
-        let address = range.address().unwrap().value();
+        let address = range.address().unwrap_or_default().value();
         let size = range.size().unwrap_or_default();
 
         if let Some(add) = ROOM_ID_SIG.scan_process_range(process, (address, size)) {
@@ -198,7 +198,7 @@ pub fn refresh_mem_values<'a>(
             .unwrap_or(Address::new(0))
             .value();
 
-        // game version doesn't need to be updated more tha once...
+        // game version doesn't need to be updated more than once...
         if memory_values.game_version.current == ArrayCString::default() {
             let game_version = buffer_helper_add + 0x40;
 

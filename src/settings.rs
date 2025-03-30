@@ -38,11 +38,11 @@ pub struct Settings {
     pub start_enable: bool,
 
     #[default = true]
-    /// On opening a new file
+    /// On opening a new save file
     pub start_new_file: bool,
 
     #[default = false]
-    /// On opening any file
+    /// On opening any save file
     pub start_any_file: bool,
 
     #[default = false]
@@ -80,11 +80,11 @@ pub struct Settings {
     pub reset_enable: bool,
 
     #[default = true]
-    /// On opening a new file
+    /// On opening a new save file
     pub reset_new_file: bool,
 
     #[default = true]
-    /// On opening any file
+    /// On opening any save file
     ///
     /// Careful with accidentally exiting to main menu!
     pub reset_any_file: bool,
