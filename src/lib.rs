@@ -17,7 +17,7 @@ asr::async_main!(stable);
 asr::panic_handler!();
 
 const MAIN_MODULE: &str = "PizzaTower.exe";
-const TICK_RATE_MAIN_LOOP: f64 = 240.0;
+const TICK_RATE_MAIN_LOOP: f64 = 120.0;
 const TICK_RATE_RETRY_ATTACH: f64 = 1.0;
 
 #[derive(Default)]
