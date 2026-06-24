@@ -207,22 +207,6 @@ async fn main() {
                             timer::set_game_time(Duration::seconds_f64(game_time_livesplit));
                         }
 
-                        // start
-                        if settings.start_enable {
-                            if settings.start_new_file && room_name_parsed_current == "tower_entrancehall" && room_name_parsed_old == "Finalintro" {
-                                timer::start();
-                            }
-                            if settings.start_any_file && room_name_parsed_current == "tower_entrancehall" && room_name_parsed_old == "hub_loadingscreen" {
-                                timer::start();
-                            }
-                            if settings.start_new_il && room_names::get_starting_room(&current_level) == room_name_parsed_current && igt_level_secs_calculated.current > 0.07 && igt_level_secs_calculated.current <= 0.1 {
-                                timer::start();
-                            }
-                            if settings.start_exit_level && mem_values.room_name.changed() && room_names::full_game_split_rooms(room_name_parsed_old) && current_level == Level::Hub {
-                                timer::start();
-                            }
-                        }
-
                         // reset
                         if settings.reset_enable {
                             if settings.reset_new_file && room_name_parsed_current == "Finalintro" && room_name_parsed_old != "Finalintro" {
@@ -278,6 +262,22 @@ async fn main() {
                                 asr::timer::split();
                             }
 
+                        }
+
+                        // start
+                        if settings.start_enable {
+                            if settings.start_new_file && room_name_parsed_current == "tower_entrancehall" && room_name_parsed_old == "Finalintro" {
+                                timer::start();
+                            }
+                            if settings.start_any_file && room_name_parsed_current == "tower_entrancehall" && room_name_parsed_old == "hub_loadingscreen" {
+                                timer::start();
+                            }
+                            if settings.start_new_il && room_names::get_starting_room(&current_level) == room_name_parsed_current && igt_level_secs_calculated.current > 0.07 && igt_level_secs_calculated.current <= 0.1 {
+                                timer::start();
+                            }
+                            if settings.start_exit_level && mem_values.room_name.changed() && room_names::full_game_split_rooms(room_name_parsed_old) && current_level == Level::Hub {
+                                timer::start();
+                            }
                         }
 
                         next_tick().await;
