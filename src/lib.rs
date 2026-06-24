@@ -246,7 +246,7 @@ async fn main() {
 
                             if settings.splits_rooms
                             && (igt_level_secs_calculated.current - last_room_split_time > 2.0 || mem_values.room_name.current != last_room_split_name)
-                            && (mem_values.room_name.changed() || mem_values.end_of_level.current == 1 && mem_values.end_of_level.old == 1) {
+                            && mem_values.room_name.changed() {
                                 last_room_split_time = igt_level_secs_calculated.current;
                                 last_room_split_name = mem_values.room_name.old;
 
