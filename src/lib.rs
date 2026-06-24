@@ -244,10 +244,11 @@ async fn main() {
                                 }
                             }
 
+                            let last_room_transition_time = igt_file_secs_calculated.current - last_room_split_time;
                             if settings.splits_rooms
-                            && (igt_level_secs_calculated.current - last_room_split_time > 2.0 || mem_values.room_name.current != last_room_split_name)
+                            && (last_room_transition_time > 2.0 || last_room_transition_time < 0.0 || mem_values.room_name.current != last_room_split_name)
                             && mem_values.room_name.changed() && room_name_parsed_old != "rank_room" {
-                                last_room_split_time = igt_level_secs_calculated.current;
+                                last_room_split_time = igt_file_secs_calculated.current;
                                 last_room_split_name = mem_values.room_name.old;
 
                                 asr::timer::split();
