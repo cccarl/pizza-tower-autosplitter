@@ -64,10 +64,7 @@ async fn main() {
         match process_option {
             Some(process_found) => {
                 process = process_found;
-                mem_addresses.main_address = match process.get_module_address(MAIN_MODULE) {
-                    Ok(address) => Some(address),
-                    Err(_) => None,
-                };
+                mem_addresses.main_address = process.get_module_address(MAIN_MODULE).ok();
                 print_message("Connected to Pizza Tower the pizzapasta game!!!");
             }
             None => {
@@ -109,17 +106,11 @@ async fn main() {
                         }
                     }
                 }
-                mem_addresses.buffer_helper = match memory::buffer_helper_sigscan_init(&process) {
-                    Ok(address) => Some(address),
-                    Err(_) => None,
-                };
+                mem_addresses.buffer_helper = memory::buffer_helper_sigscan_init(&process).ok();
 
                 // not needed if helper was found
                 if mem_addresses.buffer_helper.is_none() {
-                    mem_addresses.room_names = match memory::room_name_array_sigscan_start(&process) {
-                        Ok(address) => Some(address),
-                    Err(_) => None,
-                    };
+                    mem_addresses.room_names = memory::room_name_array_sigscan_start(&process).ok();
                 }
 
                 // ready for main loop
